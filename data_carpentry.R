@@ -4,13 +4,37 @@ data <- as.data.frame(read.csv("datasheets/Thesis Datasheet_ThresholdsAsNA.csv")
 
 #### Calculate/Aggregate Columns ####
 
-
-###habitat type (Forested or Non-Forested)
+###Create column that groups an individual as an inhabitant of either a 
+###Forested or Deforested habitat
 data['habitat'] <- NA #add empty column
 for(i in 1:nrow(data)){
   if(data$SITE[i]=='NATL' | data$SITE[i]=='McCarty' | data$SITE[i]=='Law-F' | data$SITE[i]=='Kew F' | 
      data$SITE[i]=='Env. F' | data$SITE[i]=='BTP F' | data$SITE[i]=='Alice'){data$habitat[i] <- 'Forested'}
   else{data$habitat[i] <- 'Non-Forested'}
+}
+data['sitepair'] <- NA #add empty column
+for(i in 1:nrow(data)){
+  if(data$SITE[i]=='NATL' | data$SITE[i]=='Entom'){
+    data$sitepair[i] <- 'NATL' 
+    data$sitepairnum[i] <- 4}
+  else if(data$SITE[i]=='McCarty' | data$SITE[i]=='Museum'){
+    data$sitepair[i] <- 'WEC'
+    data$sitepairnum[i] <- 5}
+  else if(data$SITE[i]=='Law-F' | data$SITE[i]=='Law-U'){
+    data$sitepair[i] <- 'Law'
+    data$sitepairnum[i] <- 6}
+  else if(data$SITE[i]=='Alice' | data$SITE[i]=='Ficke'){
+    data$sitepair[i] <- 'Lake Alice'
+    data$sitepairnum[i] <- 7}
+  else if(data$SITE[i]=='Kew F' | data$SITE[i]=='Kew U'){
+    data$sitepair[i] <- 'Kewannee'
+    data$sitepairnum[i] <- 3}
+  else if(data$SITE[i]=='Env. F' | data$SITE[i]=='Env. U'){
+    data$sitepair[i] <- 'Env Center'
+    data$sitepairnum[i] <- 1}
+  else if(data$SITE[i]=='BTP F' | data$SITE[i]=='BTP U'){
+    data$sitepair[i] <- 'Big Tree Park'
+    data$sitepairnum[i] <- 2}
 }
 
 ###temperatures
@@ -26,28 +50,28 @@ data <- mutate(data, mass.over.svl=MASS/SVL)
 #hist(data$mass.over.svl) #BIMODAL... by sex?
 #ggplot(data, aes(x=mass.over.svl, color=SEX))+geom_histogram() #
 
-#residuals
-mass.svl <- lm(MASS~SVL, data=data, na.action=na.exclude)
-bodycond <- resid(mass.svl)
-data$bodycond <- bodycond
-#sex specific residuals
-data$sex.bodycond <- NA
-female.mass.svl <- lm(MASS~SVL, data=filter(data, SEX == 'F'), na.action=na.exclude)
-female.bodycond <- resid(female.mass.svl)
-male.mass.svl <- lm(MASS~SVL, data=filter(data, SEX == 'M'), na.action=na.exclude)
-male.bodycond <- resid(male.mass.svl)
-f = 1
-m = 1
-for(i in 1:nrow(data)){
-  if(data$SEX[i] == 'F'){
-    data$sex.bodycond[i] = female.bodycond[f]
-    f = f + 1
-    }
-  else if(data$SEX[i] == 'M'){
-    data$sex.bodycond[i] = male.bodycond[m]
-    m = m + 1
-    }
-}
+##residuals
+#mass.svl <- lm(MASS~SVL, data=data, na.action=na.exclude)
+#bodycond <- resid(mass.svl)
+#data$bodycond <- bodycond
+##sex specific residuals
+#data$sex.bodycond <- NA
+#female.mass.svl <- lm(MASS~SVL, data=filter(data, SEX == 'F'), na.action=na.exclude)
+#female.bodycond <- resid(female.mass.svl)
+#male.mass.svl <- lm(MASS~SVL, data=filter(data, SEX == 'M'), na.action=na.exclude)
+#male.bodycond <- resid(male.mass.svl)
+#f = 1
+#m = 1
+#for(i in 1:nrow(data)){
+#  if(data$SEX[i] == 'F'){
+#    data$sex.bodycond[i] = female.bodycond[f]
+#    f = f + 1
+#    }
+#  else if(data$SEX[i] == 'M'){
+#    data$sex.bodycond[i] = male.bodycond[m]
+#    m = m + 1
+#    }
+#}
 
 
 
@@ -63,14 +87,14 @@ non.infected <- diagnosed %>% filter(infection == 0)
 #### Filter data ####
 #infection status
 diagnosed <- data[136:486,] %>% filter(!is.na(infection))
-infected <- data[136:486,] %>% filter(infection == 1)
-non.infected <- data[136:486,] %>% filter(infection == 0)
+infected <- diagnosed %>% filter(infection == 1)
+non.infected <- diagnosed %>% filter(infection == 0)
 #sex
-males <- data[136:486,] %>% filter(SEX == 'M')
-females <- data[136:486,] %>% filter(SEX == 'F')
+males <- diagnosed %>% filter(SEX == 'M')
+females <- diagnosed %>% filter(SEX == 'F')
 #habitat type
-urban <- data[136:486,] %>% filter(habitat == 'Non-Forested')
-forest <- data[136:486,] %>% filter(habitat == 'Forested')
+urban <- diagnosed %>% filter(habitat == 'Non-Forested')
+forest <- diagnosed %>% filter(habitat == 'Forested')
 
 #### INFECTION ####
 prop.infected <- nrow(infected)/nrow(diagnosed) #0.36 infection rate
@@ -135,5 +159,5 @@ for(i in 1:nrow(diagnosed.females)){
 
 
 diagnosed$SVL <- diagnosed$SVL*10
-diagnosed$SVL <- diagnosed$SVL-mean(diagnosed$SVL)
+#diagnosed$SVL <- diagnosed$SVL-mean(diagnosed$SVL)
 diagnosed$Hct <- diagnosed$Hct/100
